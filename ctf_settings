@@ -13,6 +13,7 @@ alias objdump="objdump -M intel"
 alias ghidra="~/Tools/ghidra_9.1.2_PUBLIC/ghidraRun"
 alias xclip="xclip -i -sel p -f | xclip -i -sel c"
 alias nikto="~/Tools/nikto/program/nikto.pl"
+alias jd-gui="java -jar ~/Tools/jd-gui-1.6.6.jar"
 
 export GOPATH=$HOME/Tools/go
 export PATH="$PATH:$HOME/Tools:$HOME/Tools/go/bin"
