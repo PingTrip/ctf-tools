@@ -1,0 +1,20 @@
+alias gdb='gdb -q'
+alias objdump="objdump -M intel"
+alias ghidra="~/Tools/ghidra_9.1.1_PUBLIC/ghidraRun"
+alias burp="/usr/lib/jvm/java-8-openjdk-amd64/bin/java -jar /usr/bin/burpsuite"
+alias xclip="xclip -i -sel p -f | xclip -i -sel c"
+
+export GOPATH=$HOME/Tools/go
+export PATH="$PATH:$HOME/Tools:$HOME/Tools/go/bin"
+
+
+alias gdb='gdb -q'
+alias objdump="objdump -M intel"
+alias ghidra="~/Tools/ghidra_9.1.2_PUBLIC/ghidraRun"
+alias xclip="xclip -i -sel p -f | xclip -i -sel c"
+alias nikto="~/Tools/nikto/program/nikto.pl"
+
+export GOPATH=$HOME/Tools/go
+export PATH="$PATH:$HOME/Tools:$HOME/Tools/go/bin"
+
+cd ~/CTF-Work
