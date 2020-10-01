@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# Path to your hosts file
+hostsFile="/etc/hosts"
+
+# Hostname to update
+hostname="target.ctf"
+
+ip=$1
+
+if [ -n "$(grep -P "[[:space:]]$hostname" /etc/hosts)" ]; then
+    sudo sed -ie "/[[:space:]]$hostname/d" "$hostsFile";
+fi
+
+printf "%s\t%s\n" "$ip" "$hostname" | sudo tee -a "$hostsFile" > /dev/null;
+
+if [ -n "$(grep $hostname /etc/hosts)" ]; then
+    echo "$hostname was added succesfully:";
+    echo "$(grep $hostname /etc/hosts)";
+    ssh-keygen -f '/home/pingtrip/.ssh/known_hosts' -R 'target.ctf'
+else
+    "Failed to add $hostname";
+fi
