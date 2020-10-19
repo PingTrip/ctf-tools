@@ -1,5 +1,5 @@
 source ~/Tools/peda/peda.py
 
 set disassembly-flavor intel
-set follow-fork-mode parent   # parent, child
+set follow-fork-mode parent
 set pagination off
