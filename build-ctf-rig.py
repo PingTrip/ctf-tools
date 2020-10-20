@@ -146,7 +146,7 @@ def cleanup_packages():
 
 def install_peda():
     print_progress("Installing PEDA...")
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "-q", "clone", "https://github.com/longld/peda.git", f"{HOMEDIR}/Tools/peda"])
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/longld/peda.git", f"{HOMEDIR}/Tools/peda"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def install_ctfhost():
@@ -282,7 +282,7 @@ elif os.getenv("SUDO_USER") == "root":
 
 HOMEDIR = os.path.expanduser('~' + os.getenv('SUDO_USER'))
 
-apt_packages = "curl masscan nmap libimage-exiftool-perl openjdk-11-jdk golang-go git python3-pip python3-dev chromium-browser libpcap-dev libc6-i386 sonic-visualiser ewf-tools hydra binwalk samdump2 ghex ffmpeg gimp steghide foremost audacity libgmp3-dev libmpc-dev libssl-dev libbz2-dev automake libtool unrar pavucontrol qsstv gnupg2 wireshark"
+apt_packages = "curl masscan nmap libimage-exiftool-perl openjdk-11-jdk golang-go git python3-pip python3-dev libpcap-dev libc6-i386 sonic-visualiser ewf-tools hydra binwalk samdump2 ghex ffmpeg gimp steghide foremost audacity libgmp3-dev libmpc-dev libssl-dev libbz2-dev automake libtool unrar pavucontrol qsstv gnupg2 wireshark upx"
 pip_packages = "opencv-python matplotlib flake8 pwntools pefile yara-python testresources sympy cryptography urllib3 requests gmpy gmpy2 pycryptodome six"
 manual_installs = "peda ctfhost ghidra gobuster cyberchef vscode rsactftool metasploit volatility yara jdgui dextools jtr stegsolve torbrowser sqlmap"
 
