@@ -7,6 +7,7 @@ import time
 import subprocess
 import urllib.request
 import zipfile
+import shutil
 import tarfile
 
 
@@ -159,6 +160,7 @@ def install_ghidra():
     print_progress("Installing Ghidra...")
     if not os.path.exists(f'{HOMEDIR}/Documents/Ghidra-Work'):
         os.mkdir(f"{HOMEDIR}/Documents/Ghidra-Work", 0o755)
+        shutil.chown(f"{HOMEDIR}/Documents/Ghidra-Work", os.getenv('SUDO_USER'), os.getenv('SUDO_USER'))
 
     urllib.request.urlretrieve("https://ghidra-sre.org/ghidra_9.1.2_PUBLIC_20200212.zip", '/tmp/ghidra.zip')
 
