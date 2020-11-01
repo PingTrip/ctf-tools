@@ -164,7 +164,7 @@ def install_ghidra():
 
     urllib.request.urlretrieve("https://ghidra-sre.org/ghidra_9.1.2_PUBLIC_20200212.zip", '/tmp/ghidra.zip')
 
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "unzip", "/tmp/ghidra.zip", "-d", "f"{HOMEDIR}/Tools/"t"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "unzip", "/tmp/ghidra.zip", "-d", f"{HOMEDIR}/Tools/"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # Launch Ghidra and create a new project with the name _CTF_ and project directory of _HOMEDIR/Documents/Ghidra-Work_
 
