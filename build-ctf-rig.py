@@ -162,7 +162,7 @@ def install_ghidra():
         os.mkdir(f"{HOMEDIR}/Documents/Ghidra-Work", 0o755)
         shutil.chown(f"{HOMEDIR}/Documents/Ghidra-Work", os.getenv('SUDO_USER'), os.getenv('SUDO_USER'))
 
-    urllib.request.urlretrieve("https://ghidra-sre.org/ghidra_9.1.2_PUBLIC_20200212.zip", '/tmp/ghidra.zip')
+    urllib.request.urlretrieve("https://ghidra-sre.org/ghidra_9.2_PUBLIC_20201113.zip", '/tmp/ghidra.zip')
 
     subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "unzip", "/tmp/ghidra.zip", "-d", f"{HOMEDIR}/Tools/"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
