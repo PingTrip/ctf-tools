@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import apt
+import re
 import os
 import sys
 import time
@@ -40,7 +41,7 @@ def update_package_list():
 
 def uninstall_packages():
     print_progress("Uninstalling unwanted packages...")
-    pkg_list = ["unattended-upgrades", "network-manager-config-connectivity-ubuntu"]
+    pkg_list = ["unattended-upgrades", "network-manager-config-connectivity-ubuntu", "snapd"]
     apt_cache = apt.Cache()
 
     for pkg in pkg_list:
@@ -49,6 +50,7 @@ def uninstall_packages():
         print(f'Uninstalling {pkg}: {pkg.marked_delete}')
 
     apt_cache.commit(install_progress=LogInstallProgress())
+    subprocess.run(["sudo", "apt-mark", "hold", "snapd"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 def install_apt_packages(pkg_list):
@@ -162,7 +164,12 @@ def install_ghidra():
         os.mkdir(f"{HOMEDIR}/Documents/Ghidra-Work", 0o755)
         shutil.chown(f"{HOMEDIR}/Documents/Ghidra-Work", os.getenv('SUDO_USER'), os.getenv('SUDO_USER'))
 
-    urllib.request.urlretrieve("https://ghidra-sre.org/ghidra_9.2_PUBLIC_20201113.zip", '/tmp/ghidra.zip')
+
+    html = urllib.request.urlopen('https://ghidra-sre.org/')
+    soup = BeautifulSoup(html.read(), features="html.parser")
+    latest_ver = soup.find('a', href=True, string=re.compile('Download Ghidra')['href']
+
+    urllib.request.urlretrieve(f"https://ghidra-sre.org/{latest_ver}", '/tmp/ghidra.zip')
 
     subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "unzip", "/tmp/ghidra.zip", "-d", f"{HOMEDIR}/Tools/"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -196,6 +203,7 @@ def install_vscode():
 def install_rsactftool():
     print_progress("Installing RsaCtfTool...")
     subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/Ganapati/RsaCtfTool.git", f"{HOMEDIR}/Tools/RsaCtfTool"])
+    #pip3 install -r "requirements.txt"
 
 
 def install_metasploit():
@@ -256,8 +264,12 @@ def install_stegsolve():
 
 def install_torbrowser():
     print_progress("Installing TOR Browser...")
-    # check for the latest version at https://www.torproject.org/download/
-    urllib.request.urlretrieve("https://www.torproject.org/dist/torbrowser/10.0/tor-browser-linux64-10.0_en-US.tar.xz", '/tmp/torbrowser.tar.xz')
+
+    html = urllib.request.urlopen('https://www.torproject.org/download/')
+    soup = BeautifulSoup(html.read(), features="html.parser")
+    latest_ver = soup.find('a', href=True, text='Download for Linux')['href']
+
+    urllib.request.urlretrieve(f"https://www.torproject.org{latest_ver}", '/tmp/torbrowser.tar.xz')
 
     with tarfile.open('/tmp/torbrowser.tar.xz') as tar:
         tar.extractall(f'{HOMEDIR}/Tools/')
@@ -283,8 +295,8 @@ elif os.getenv("SUDO_USER") == "root":
 
 HOMEDIR = os.path.expanduser('~' + os.getenv('SUDO_USER'))
 
-apt_packages = "curl masscan nmap libimage-exiftool-perl openjdk-11-jdk golang-go git python3-pip python3-dev libpcap-dev libc6-i386 sonic-visualiser ewf-tools hydra binwalk samdump2 ghex ffmpeg gimp steghide foremost audacity libgmp3-dev libmpc-dev libssl-dev libbz2-dev automake libtool unrar pavucontrol qsstv gnupg2 wireshark upx-ucl"
-pip_packages = "opencv-python matplotlib flake8 pwntools pefile yara-python testresources sympy cryptography urllib3 requests gmpy gmpy2 pycryptodome six"
+apt_packages = "curl masscan nmap libimage-exiftool-perl openjdk-11-jdk golang-go git python3-pip python3-dev libpcap-dev libc6-i386 sonic-visualiser ewf-tools hydra binwalk samdump2 ghex ffmpeg gimp steghide foremost audacity libgmp3-dev libmpc-dev libssl-dev libbz2-dev automake libtool unrar pavucontrol qsstv gnupg2 wireshark upx-ucl sagemath mysql-server sqlite3"
+pip_packages = "opencv-python matplotlib flake8 pwntools pefile yara-python testresources sympy cryptography urllib3 requests gmpy gmpy2 pycryptodome six beautifulsoup4"
 manual_installs = "peda ctfhost ghidra gobuster cyberchef vscode rsactftool metasploit volatility yara jdgui dextools jtr stegsolve torbrowser sqlmap"
 
 update_package_list()
@@ -296,6 +308,8 @@ install_pip_packages(pip_packages)
 cleanup_packages()
 tweak_desktop_settings()
 setup_workenv()
+
+from bs4 import BeautifulSoup
 
 for pkg in manual_installs.split():
     locals()["install_" + pkg]()
