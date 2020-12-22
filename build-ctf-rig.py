@@ -167,7 +167,7 @@ def install_ghidra():
 
     html = urllib.request.urlopen('https://ghidra-sre.org/')
     soup = BeautifulSoup(html.read(), features="html.parser")
-    latest_ver = soup.find('a', href=True, string=re.compile('Download Ghidra')['href']
+    latest_ver = soup.find('a', href=True, string=re.compile('Download Ghidra'))['href']
 
     urllib.request.urlretrieve(f"https://ghidra-sre.org/{latest_ver}", '/tmp/ghidra.zip')
 
