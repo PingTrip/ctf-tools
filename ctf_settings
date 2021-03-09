@@ -1,11 +1,12 @@
 alias gdb='gdb -q'
 alias objdump="objdump -M intel"
-alias ghidra="~/Tools/ghidra_9.1.2_PUBLIC/ghidraRun"
+alias ghidra="~/Tools/ghidra/ghidraRun"
 # alias burp="/usr/lib/jvm/java-8-openjdk-amd64/bin/java -jar /usr/bin/burpsuite"
 alias xclip="xclip -i -sel p -f | xclip -i -sel c"
 alias nikto="~/Tools/nikto/program/nikto.pl"
 alias jdgui="java -jar ~/Tools/jd-gui-1.6.6.jar"
 alias stegsolve="java -jar ~/Tools/stegsolve.jar"
+alias sqlmap="python3 ~/Tools/sqlmap/sqlmap.py"
 
 export GOPATH=$HOME/Tools/go
 export PATH="$PATH:$HOME/Tools:$HOME/Tools/go/bin"

@@ -10,6 +10,7 @@ import urllib.request
 import zipfile
 import shutil
 import tarfile
+from glob import glob
 
 
 class LogInstallProgress(apt.progress.base.InstallProgress):
@@ -23,10 +24,18 @@ class LogInstallProgress(apt.progress.base.InstallProgress):
 
 
 def print_progress(msg):
-    print("--------------------------------------------------------------------------------")
+    print("----------------------------------------------------------------------")
     print(f"| {msg}")
-    print("--------------------------------------------------------------------------------")
+    print("----------------------------------------------------------------------")
     time.sleep(2)
+
+
+def update_apt_repo():
+    pass
+    urllib.request.urlretrieve("https://packagecloud.io/AtomEditor/atom/gpgkey", '/tmp/atom.key')
+    subprocess.run(["apt-key", "add", "/tmp/atom.key"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    repo_config = "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main"
+    subprocess.run(["add-apt-repository", repo_config], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 def update_package_list():
@@ -41,7 +50,7 @@ def update_package_list():
 
 def uninstall_packages():
     print_progress("Uninstalling unwanted packages...")
-    pkg_list = ["unattended-upgrades", "network-manager-config-connectivity-ubuntu", "snapd"]
+    pkg_list = ["unattended-upgrades", "network-manager-config-connectivity-ubuntu"]
     apt_cache = apt.Cache()
 
     for pkg in pkg_list:
@@ -50,7 +59,7 @@ def uninstall_packages():
         print(f'Uninstalling {pkg}: {pkg.marked_delete}')
 
     apt_cache.commit(install_progress=LogInstallProgress())
-    subprocess.run(["sudo", "apt-mark", "hold", "snapd"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["apt-mark", "hold", "snapd"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 def install_apt_packages(pkg_list):
@@ -133,6 +142,7 @@ def tweak_desktop_settings():
     for setting in desktop_settings:
         subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "gsettings", "set", *setting])
 
+    # Copy monitor.xml to .config
     subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "xrandr", "--output", "Virtual1", "--mode", "1440x900"])
 
 
@@ -164,7 +174,6 @@ def install_ghidra():
         os.mkdir(f"{HOMEDIR}/Documents/Ghidra-Work", 0o755)
         shutil.chown(f"{HOMEDIR}/Documents/Ghidra-Work", os.getenv('SUDO_USER'), os.getenv('SUDO_USER'))
 
-
     html = urllib.request.urlopen('https://ghidra-sre.org/')
     soup = BeautifulSoup(html.read(), features="html.parser")
     latest_ver = soup.find('a', href=True, string=re.compile('Download Ghidra'))['href']
@@ -172,13 +181,16 @@ def install_ghidra():
     urllib.request.urlretrieve(f"https://ghidra-sre.org/{latest_ver}", '/tmp/ghidra.zip')
 
     subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "unzip", "/tmp/ghidra.zip", "-d", f"{HOMEDIR}/Tools/"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    path = "/path_to_files"
 
+    f = glob(os.path.join(HOMEDIR, "ghidra_*"))[0]
+    os.rename(f, os.path.join(path, "ghidra"))
     # Launch Ghidra and create a new project with the name _CTF_ and project directory of _HOMEDIR/Documents/Ghidra-Work_
 
 
 def install_gobuster():
     print_progress("Installing Gobuster...")
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "/bin/env", f"GOPATH={HOMEDIR}/Tools/go", "go", "get", "github.com/OJ/gobuster"])
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "/bin/env", f"GOPATH={HOMEDIR}/Tools/go", "go", "get", "github.com/OJ/gobuster"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 def install_cyberchef():
@@ -186,7 +198,11 @@ def install_cyberchef():
     if not os.path.exists(f'{HOMEDIR}/Tools/cyberchef'):
         os.mkdir(f"{HOMEDIR}/Tools/cyberchef", 0o755)
 
-    urllib.request.urlretrieve("https://gchq.github.io/CyberChef/CyberChef_v9.21.0.zip", '/tmp/cyberchef.zip')
+    html = urllib.request.urlopen('https://gchq.github.io/CyberChef/')
+    soup = BeautifulSoup(html.read(), features="html.parser")
+    latest_ver = soup.select_one("a[download]")["href"]
+
+    urllib.request.urlretrieve(f"https://gchq.github.io/CyberChef/{latest_ver}", '/tmp/cyberchef.zip')
 
     with zipfile.ZipFile('/tmp/cyberchef.zip', 'r') as zip_ref:
         zip_ref.extractall(f"{HOMEDIR}/Tools/cyberchef")
@@ -194,29 +210,23 @@ def install_cyberchef():
     # In your web browser of choice set a bookmark for _file:///home/[USERNAME]/Tools/cyberchef/CyberChef\_v9.21.0.html_
 
 
-def install_vscode():
-    print_progress("Installing VS Code...")
-    urllib.request.urlretrieve("https://go.microsoft.com/fwlink/?LinkID=760868", '/tmp/vscode.deb')
-    subprocess.run(["sudo", "dpkg", "-i", "/tmp/vscode.deb"])
-
-
 def install_rsactftool():
     print_progress("Installing RsaCtfTool...")
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/Ganapati/RsaCtfTool.git", f"{HOMEDIR}/Tools/RsaCtfTool"])
-    #pip3 install -r "requirements.txt"
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/Ganapati/RsaCtfTool.git", f"{HOMEDIR}/Tools/RsaCtfTool"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    # pip3 install -r "requirements.txt"
 
 
 def install_metasploit():
-    print_progress("Installing VS Code...")
+    print_progress("Installing Metasploit...")
     urllib.request.urlretrieve("https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb", '/tmp/msfinstall')
-    subprocess.run(["sudo", "sh", "/tmp/msfinstall"])
-    #$ msfconsole
-    #Enter 'no' at prompt to create new database
+    subprocess.run(["sudo", "sh", "/tmp/msfinstall"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    # $ msfconsole
+    # Enter 'no' at prompt to create new database
 
 
 def install_volatility():
     print_progress("Installing Volatility 3...")
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/volatilityfoundation/volatility3.git", f"{HOMEDIR}/Tools/volatility3"])
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/volatilityfoundation/volatility3.git", f"{HOMEDIR}/Tools/volatility3"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 def install_yara():
@@ -227,11 +237,11 @@ def install_yara():
     with tarfile.open('/tmp/yara.tar.gz') as tar:
         tar.extractall('/tmp')
 
-    subprocess.run(["chown", "-R", os.getenv('SUDO_USER'), "/tmp/yara-4.0.2"])
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "./bootstrap.sh"], cwd="/tmp/yara-4.0.2")
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "./configure"], cwd="/tmp/yara-4.0.2")
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "make"], cwd="/tmp/yara-4.0.2")
-    subprocess.run(["make", "install"], cwd="/tmp/yara-4.0.2")
+    subprocess.run(["chown", "-R", os.getenv('SUDO_USER'), "/tmp/yara-4.0.2"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "./bootstrap.sh"], cwd="/tmp/yara-4.0.2", stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "./configure"], cwd="/tmp/yara-4.0.2", stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "make"], cwd="/tmp/yara-4.0.2", stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["make", "install"], cwd="/tmp/yara-4.0.2", stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 def install_jdgui():
@@ -251,10 +261,10 @@ def install_dextools():
 
 def install_jtr():
     print_progress("Installing John the Ripper...")
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/openwall/john", "-b", "bleeding-jumbo", f"{HOMEDIR}/Tools/jtr"])
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "./configure"], cwd=f'{HOMEDIR}/Tools/jtr/src/')
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "make","-s", "clean"], cwd=f'{HOMEDIR}/Tools/jtr/src/')
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "make","-sj4"], cwd=f'{HOMEDIR}/Tools/jtr/src/')
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/openwall/john", "-b", "bleeding-jumbo", f"{HOMEDIR}/Tools/jtr"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "./configure"], cwd=f'{HOMEDIR}/Tools/jtr/src/', stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "make", "-s", "clean"], cwd=f'{HOMEDIR}/Tools/jtr/src/', stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "make", "-sj4"], cwd=f'{HOMEDIR}/Tools/jtr/src/', stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 def install_stegsolve():
@@ -274,13 +284,13 @@ def install_torbrowser():
     with tarfile.open('/tmp/torbrowser.tar.xz') as tar:
         tar.extractall(f'{HOMEDIR}/Tools/')
 
-    subprocess.run(["chown", "-R", os.getenv('SUDO_USER'), f"{HOMEDIR}/Tools/"])
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "./start-tor-browser.desktop", "--register-app"], cwd=f'{HOMEDIR}/Tools/tor-browser_en-US/')
+    subprocess.run(["chown", "-R", os.getenv('SUDO_USER'), f"{HOMEDIR}/Tools/"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "./start-tor-browser.desktop", "--register-app"], cwd=f'{HOMEDIR}/Tools/tor-browser_en-US/', stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 def install_sqlmap():
     print_progress("Installing sqlmap...")
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/sqlmapproject/sqlmap.git", "--depth", "1", f"{HOMEDIR}/Tools/sqlmap"])
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/sqlmapproject/sqlmap.git", "--depth", "1", f"{HOMEDIR}/Tools/sqlmap"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 # ---------------------------------------------------------------- #
@@ -295,13 +305,14 @@ elif os.getenv("SUDO_USER") == "root":
 
 HOMEDIR = os.path.expanduser('~' + os.getenv('SUDO_USER'))
 
-apt_packages = "curl masscan nmap libimage-exiftool-perl openjdk-11-jdk golang-go git python3-pip python3-dev libpcap-dev libc6-i386 sonic-visualiser ewf-tools hydra binwalk samdump2 ghex ffmpeg gimp steghide foremost audacity libgmp3-dev libmpc-dev libssl-dev libbz2-dev automake libtool unrar pavucontrol qsstv gnupg2 wireshark upx-ucl sagemath mysql-server sqlite3"
+apt_packages = "atom chromium-browser curl masscan nmap libimage-exiftool-perl openjdk-11-jdk golang-go git python3-pip python3-dev libpcap-dev libc6-i386 sonic-visualiser ewf-tools hydra binwalk samdump2 ghex ffmpeg gimp steghide foremost audacity libgmp3-dev libmpc-dev libssl-dev libbz2-dev automake libtool unrar pavucontrol qsstv gnupg2 wireshark upx-ucl sagemath mysql-server sqlite3"
 pip_packages = "opencv-python matplotlib flake8 pwntools pefile yara-python testresources sympy cryptography urllib3 requests gmpy gmpy2 pycryptodome six beautifulsoup4"
-manual_installs = "peda ctfhost ghidra gobuster cyberchef vscode rsactftool metasploit volatility yara jdgui dextools jtr stegsolve torbrowser sqlmap"
+manual_installs = "peda ctfhost ghidra gobuster cyberchef rsactftool metasploit volatility yara jdgui dextools jtr stegsolve torbrowser sqlmap"
 
-update_package_list()
-uninstall_packages()
 disable_cups_browsed()
+uninstall_packages()
+update_apt_repo()
+update_package_list()
 install_apt_packages(apt_packages)
 create_shared_folder_mount()
 install_pip_packages(pip_packages)
