@@ -76,6 +76,11 @@ def install_apt_packages(pkg_list):
     apt_cache.commit(install_progress=LogInstallProgress())
 
 
+def install_snap_packages(pkg_list):
+    print_progress("Installing SNAP packages...")
+    subprocess.run(["snap", "install", pkg_list], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+
+
 def install_pip_packages(pkg_list):
     print_progress("Installing PIP packages...")
     subprocess.run(["sudo", "-H", "pip3", "-q", "install", *pkg_list.split()])
@@ -142,8 +147,9 @@ def tweak_desktop_settings():
     for setting in desktop_settings:
         subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "gsettings", "set", *setting])
 
-    # Copy monitor.xml to .config
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "xrandr", "--output", "Virtual1", "--mode", "1440x900"])
+    # Copy monitors.xml to .config
+    urllib.request.urlretrieve("https://raw.githubusercontent.com/PingTrip/ctf-tools/master/monitors.xml", f'{HOMEDIR}/.config/monitors.xml')
+    subprocess.run(["chown", f"{os.getenv('SUDO_USER')}:{os.getenv('SUDO_USER')}", f"{HOMEDIR}/.config/monitors.xml"])
 
 
 def cleanup_packages():
@@ -253,7 +259,7 @@ def install_jdgui():
 def install_dextools():
     print_progress("Installing Dextools...")
     # check for latest at https://github.com/DexPatcher/dex2jar/releases/
-    urllib.request.urlretrieve("https://github.com/DexPatcher/dex2jar/releases/download/v2.1-20171001-lanchon/dex-tools-2.1-20171001-lanchon.zip", '/tmp/dex-tools.zip')
+    urllib.request.urlretrieve("https://github.com/DexPatcher/dex2jar/releases/download/v2.1-20190905-lanchon/dex-tools-2.1-20190905-lanchon.zip", '/tmp/dex-tools.zip')
 
     with zipfile.ZipFile('/tmp/dex-tools.zip', 'r') as zip_ref:
         zip_ref.extractall(f"{HOMEDIR}/Tools/")
@@ -269,6 +275,7 @@ def install_jtr():
 
 def install_stegsolve():
     print_progress("Installing StegSolve...")
+    # check for latest at https://github.com/Giotino/stegsolve/releases
     urllib.request.urlretrieve("https://github.com/Giotino/stegsolve/releases/download/v.1.5/StegSolve-1.5-alpha1.jar", f'{HOMEDIR}/Tools/stegsolve.jar')
 
 
@@ -305,7 +312,8 @@ elif os.getenv("SUDO_USER") == "root":
 
 HOMEDIR = os.path.expanduser('~' + os.getenv('SUDO_USER'))
 
-apt_packages = "atom chromium-browser curl masscan nmap libimage-exiftool-perl openjdk-11-jdk golang-go git python3-pip python3-dev libpcap-dev libc6-i386 sonic-visualiser ewf-tools hydra binwalk samdump2 ghex ffmpeg gimp steghide foremost audacity libgmp3-dev libmpc-dev libssl-dev libbz2-dev automake libtool unrar pavucontrol qsstv gnupg2 wireshark upx-ucl sagemath mysql-server sqlite3"
+apt_packages = "atom curl masscan nmap libimage-exiftool-perl openjdk-11-jdk golang-go git python3-pip python3-dev libpcap-dev libc6-i386 sonic-visualiser ewf-tools hydra binwalk samdump2 ghex ffmpeg gimp steghide foremost audacity libgmp3-dev libmpc-dev libssl-dev libbz2-dev automake libtool unrar pavucontrol qsstv gnupg2 wireshark upx-ucl sagemath mysql-server sqlite3"
+snap_packages = "chromium joplin-james-carroll"
 pip_packages = "opencv-python matplotlib flake8 pwntools pefile yara-python testresources sympy cryptography urllib3 requests gmpy gmpy2 pycryptodome six beautifulsoup4"
 manual_installs = "peda ctfhost ghidra gobuster cyberchef rsactftool metasploit volatility yara jdgui dextools jtr stegsolve torbrowser sqlmap"
 
@@ -314,6 +322,7 @@ uninstall_packages()
 update_apt_repo()
 update_package_list()
 install_apt_packages(apt_packages)
+install_snap_packages(snap_packages)
 create_shared_folder_mount()
 install_pip_packages(pip_packages)
 cleanup_packages()
