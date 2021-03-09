@@ -189,7 +189,7 @@ def install_ghidra():
     subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "unzip", "/tmp/ghidra.zip", "-d", f"{HOMEDIR}/Tools/"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     path = "/path_to_files"
 
-    f = glob(os.path.join(HOMEDIR, "ghidra_*"))[0]
+    f = glob(os.path.join(f"{HOMEDIR}/Tools/", "ghidra_*"))[0]
     os.rename(f, os.path.join(path, "ghidra"))
     # Launch Ghidra and create a new project with the name _CTF_ and project directory of _HOMEDIR/Documents/Ghidra-Work_
 
