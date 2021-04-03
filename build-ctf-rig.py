@@ -31,11 +31,13 @@ def print_progress(msg):
 
 
 def update_apt_repo():
-    pass
     urllib.request.urlretrieve("https://packagecloud.io/AtomEditor/atom/gpgkey", '/tmp/atom.key')
     subprocess.run(["apt-key", "add", "/tmp/atom.key"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    repo_config = "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main"
-    subprocess.run(["add-apt-repository", repo_config], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["add-apt-repository", "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+
+    urllib.request.urlretrieve("https://download.opensuse.org/repositories/security:zeek/xUbuntu_20.04/Release.key", '/tmp/zeek.key')
+    subprocess.run(["apt-key", "add", "/tmp/zeek.key"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["add-apt-repository", 'deb http://download.opensuse.org/repositories/security:/zeek/xUbuntu_20.04/ /'], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 def update_package_list():
@@ -124,12 +126,15 @@ def setup_workenv():
     urllib.request.urlretrieve("https://raw.githubusercontent.com/PingTrip/ctf-tools/master/gdbinit", f'{HOMEDIR}/.gdbinit')
     subprocess.run(["chown", f"{os.getenv('SUDO_USER')}:{os.getenv('SUDO_USER')}", f"{HOMEDIR}/.gdbinit"])
 
+    # Source ctf_settings from .bashrc
     with open(f"{HOMEDIR}/.bashrc", "r+") as f:
         for line in f:
             if f"source {HOMEDIR}/Tools/ctf_settings" in line:
                 break
         else:
             f.write(f"source {HOMEDIR}/Tools/ctf_settings")
+
+    os.symlink("/mnt/hgfs/CTF-Data/", f"{HOMEDIR}/CTF-Data")
 
 
 def tweak_desktop_settings():
@@ -187,16 +192,24 @@ def install_ghidra():
     urllib.request.urlretrieve(f"https://ghidra-sre.org/{latest_ver}", '/tmp/ghidra.zip')
 
     subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "unzip", "/tmp/ghidra.zip", "-d", f"{HOMEDIR}/Tools/"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    path = "/path_to_files"
 
-    f = glob(os.path.join(f"{HOMEDIR}/Tools/", "ghidra_*"))[0]
-    os.rename(f, os.path.join(path, "ghidra"))
+    fpath = glob(os.path.join(f"{HOMEDIR}/Tools/", "ghidra_*"))[0]
+    os.rename(fpath, f"{HOMEDIR}/Tools/ghidra")
     # Launch Ghidra and create a new project with the name _CTF_ and project directory of _HOMEDIR/Documents/Ghidra-Work_
+
+
+def install_golang():
+    # Check for latest at https://golang.org/dl/
+    latest_ver = 'go1.16.linux-amd64.tar.gz'
+    urllib.request.urlretrieve(f"https://golang.org/dl/{latest_ver}", '/tmp/golang.tar.gz')
+
+    with tarfile.open('/tmp/golang.tar.gz') as tar:
+        tar.extractall('/usr/local/')
 
 
 def install_gobuster():
     print_progress("Installing Gobuster...")
-    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "/bin/env", f"GOPATH={HOMEDIR}/Tools/go", "go", "get", "github.com/OJ/gobuster"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "/bin/env", f"GOPATH={HOMEDIR}/Tools/go", "/usr/local/go/bin/go", "install", "github.com/OJ/gobuster/v3@latest"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 def install_cyberchef():
@@ -300,6 +313,17 @@ def install_sqlmap():
     subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/sqlmapproject/sqlmap.git", "--depth", "1", f"{HOMEDIR}/Tools/sqlmap"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
+def install_nmap():
+    print_progress("Installing nmap...")
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "git", "clone", "https://github.com/nmap/nmap.git", f"{HOMEDIR}/Tools/nmap"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "./configure", "--without-zenmap", f"--prefix={HOMEDIR}/Tools/nmap"], cwd=f'{HOMEDIR}/Tools/nmap/', stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "make", "clean"], cwd=f'{HOMEDIR}/Tools/nmap/', stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "make"], cwd=f'{HOMEDIR}/Tools/nmap/', stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "f'{HOMEDIR}/Tools/nmap/bin/nmap", "--script-updatedb"], cwd=f'{HOMEDIR}/Tools/nmap/', stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+
+    # Disable specific NSE scripts
+    os.rename(f"{HOMEDIR}/Tools/nmap/scripts/broadcast-avahi-dos.nse", f"{HOMEDIR}/Tools/nmap/scripts/broadcast-avahi-dos.DISABLED")
+
 # ---------------------------------------------------------------- #
 
 
@@ -312,11 +336,12 @@ elif os.getenv("SUDO_USER") == "root":
 
 HOMEDIR = os.path.expanduser('~' + os.getenv('SUDO_USER'))
 
-apt_packages = "atom curl masscan nmap libimage-exiftool-perl openjdk-11-jdk golang-go git python3-pip python3-dev libpcap-dev libc6-i386 sonic-visualiser ewf-tools hydra binwalk samdump2 ghex ffmpeg gimp steghide foremost audacity libgmp3-dev libmpc-dev libssl-dev libbz2-dev automake libtool unrar pavucontrol qsstv gnupg2 wireshark upx-ucl sagemath mysql-server sqlite3"
+apt_packages = "atom curl masscan libimage-exiftool-perl openjdk-11-jdk git python3-pip python3-dev libpcap-dev libc6-i386 sonic-visualiser ewf-tools hydra binwalk samdump2 ghex ffmpeg gimp steghide foremost audacity libgmp3-dev libmpc-dev libssl-dev libbz2-dev automake libtool unrar pavucontrol qsstv gnupg2 wireshark upx-ucl sagemath mysql-server sqlite3 zeek-core crunch"
 snap_packages = "chromium joplin-james-carroll"
-pip_packages = "opencv-python matplotlib flake8 pwntools pefile yara-python testresources sympy cryptography urllib3 requests gmpy gmpy2 pycryptodome six beautifulsoup4"
-manual_installs = "peda ctfhost ghidra gobuster cyberchef rsactftool metasploit volatility yara jdgui dextools jtr stegsolve torbrowser sqlmap"
+pip_packages = "opencv-python matplotlib flake8 pwntools pefile yara-python testresources sympy cryptography urllib3 requests gmpy gmpy2 pycryptodome six beautifulsoup4 xortool"
+manual_installs = "peda ctfhost ghidra golang gobuster cyberchef rsactftool metasploit volatility yara jdgui dextools jtr stegsolve torbrowser sqlmap nmap"
 
+setup_workenv()
 disable_cups_browsed()
 uninstall_packages()
 update_apt_repo()
@@ -327,7 +352,7 @@ create_shared_folder_mount()
 install_pip_packages(pip_packages)
 cleanup_packages()
 tweak_desktop_settings()
-setup_workenv()
+
 
 from bs4 import BeautifulSoup
 
