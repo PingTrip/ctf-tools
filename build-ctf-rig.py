@@ -185,11 +185,11 @@ def install_ghidra():
         os.mkdir(f"{HOMEDIR}/Documents/Ghidra-Work", 0o755)
         shutil.chown(f"{HOMEDIR}/Documents/Ghidra-Work", os.getenv('SUDO_USER'), os.getenv('SUDO_USER'))
 
-    html = urllib.request.urlopen('https://ghidra-sre.org/')
+    html = urllib.request.urlopen('https://github.com/NationalSecurityAgency/ghidra/releases/latest')
     soup = BeautifulSoup(html.read(), features="html.parser")
-    latest_ver = soup.find('a', href=True, string=re.compile('Download Ghidra'))['href']
+    latest_ver = soup.find('a', href=re.compile(r'.*PUBLIC_\d{8}\.zip'))['href']
 
-    urllib.request.urlretrieve(f"https://ghidra-sre.org/{latest_ver}", '/tmp/ghidra.zip')
+    urllib.request.urlretrieve(f"https://github.com/{latest_ver}", '/tmp/ghidra.zip')
 
     subprocess.run(["sudo", "-u", os.getenv('SUDO_USER'), "unzip", "/tmp/ghidra.zip", "-d", f"{HOMEDIR}/Tools/"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -199,6 +199,7 @@ def install_ghidra():
 
 
 def install_golang():
+    # GoBuster requires 1.16+
     # Check for latest at https://golang.org/dl/
     latest_ver = 'go1.16.linux-amd64.tar.gz'
     urllib.request.urlretrieve(f"https://golang.org/dl/{latest_ver}", '/tmp/golang.tar.gz')
